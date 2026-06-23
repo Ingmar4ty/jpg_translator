@@ -1,0 +1,106 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+.coverage
+.coverage.*
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+
+# Type checkers
+.mypy_cache/
+.pytype/
+.pyre/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# =========================
+# Virtual environments
+# =========================
+.venv/
+venv/
+env/
+ENV/
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+
+# =========================
+# Local models
+# =========================
+models/
+*.gguf
+*.ggml
+*.bin
+*.safetensors
+
+# =========================
+# OCR input/output
+# =========================
+files/
+!files/.gitkeep
+output/
+!output/.gitkeep
+
+# =========================
+# Runtime data
+# =========================
+translation_cache.json
+*.log
+
+# PaddleOCR cache
+.paddleocr/
+.paddlehub/
+.paddlex/
+
+# HuggingFace cache
+.cache/
+huggingface/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Temporary files
+# =========================
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig
+
+models/*
+!models/.gitkeep

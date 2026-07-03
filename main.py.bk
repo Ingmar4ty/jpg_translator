@@ -1,0 +1,1147 @@
+import os
+import re
+import json
+import inspect
+from datetime import datetime
+import tempfile
+from pathlib import Path
+import cv2
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+from paddleocr import PaddleOCR
+from llama_cpp import Llama
+try:
+    import paddle
+except Exception:
+    paddle = None
+try:
+    import pytesseract
+except Exception:
+    pytesseract = None
+
+##############################################################################
+# CONFIG
+##############################################################################
+INPUT_DIR = "files"
+OUTPUT_DIR = "output"
+LOGS_DIR = "logs"
+READY_OUTPUT_DIR = os.getenv("READY_OUTPUT_DIR", "/mnt/e/repos/translations/ready")
+MODEL_PATH = os.getenv("MODEL_PATH", "models/qwen3-14b-instruct-q4_k_m.gguf")
+FONT_PATH = "fonts/DejaVuSans.ttf"
+CACHE_FILE = "translation_cache.json"
+OCR_PROFILE = os.getenv("OCR_PROFILE", "gpu_locked")
+USE_TESSERACT_FALLBACK = os.getenv("USE_TESSERACT_FALLBACK", "0") == "1"
+USE_PREPROCESS_VARIANTS = os.getenv("USE_PREPROCESS_VARIANTS", "0") == "1"
+TRANSLATE_LARGE_BLOCKS = os.getenv("TRANSLATE_LARGE_BLOCKS", "1") == "1"
+FORCE_RETRANSLATE_BAD_CACHE = os.getenv("FORCE_RETRANSLATE_BAD_CACHE", "1") == "1"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+##############################################################################
+# CACHE
+##############################################################################
+if os.path.exists(CACHE_FILE):
+    with open(CACHE_FILE, "r", encoding="utf8") as f:
+        TRANSLATION_CACHE = json.load(f)
+else:
+    TRANSLATION_CACHE = {}
+
+def save_cache():
+    with open(CACHE_FILE, "w", encoding="utf8") as f:
+        json.dump(TRANSLATION_CACHE, f, ensure_ascii=False, indent=2)
+
+def append_debug(debug, stage, **data):
+    debug.setdefault("events", []).append({
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "stage": stage,
+        "data": data,
+    })
+
+def write_debug_log(debug):
+    safe_name = re.sub(r"[^A-Za-z0-9_.-]+", "_", debug.get("file_name", "unknown"))
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    log_path = Path(LOGS_DIR) / f"{safe_name}+{stamp}.json"
+    with open(log_path, "w", encoding="utf8") as f:
+        json.dump(debug, f, ensure_ascii=False, indent=2)
+    return log_path
+
+def save_outputs(img, input_path):
+    out_path = Path(OUTPUT_DIR) / input_path.relative_to(INPUT_DIR)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(out_path), img)
+
+    ready_dir = Path(READY_OUTPUT_DIR)
+    ready_dir.mkdir(parents=True, exist_ok=True)
+    dt = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ready_name = f"{input_path.stem}+{dt}+.jpg"
+    ready_path = ready_dir / ready_name
+    cv2.imwrite(str(ready_path), img)
+    return out_path, ready_path
+
+def is_suspicious_text(text):
+    t = (text or "").strip()
+    if len(t) < 2:
+        return True
+    # OCR trash usually has lots of punctuation/random symbols.
+    alnum = sum(1 for c in t if c.isalnum())
+    punct_chars = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+    punct = sum(1 for c in t if c in punct_chars)
+    digits = sum(1 for c in t if c.isdigit())
+    unique_punct = len({c for c in t if c in punct_chars})
+    if alnum == 0:
+        return True
+    if punct / len(t) > 0.30:
+        return True
+    if alnum / len(t) < 0.4:
+        return True
+    if len(t) >= 8 and digits >= 2 and unique_punct >= 3:
+        return True
+    return False
+
+def has_cyrillic(text):
+    return bool(re.search(r"[А-Яа-яЁё]", text or ""))
+
+def has_latin(text):
+    return bool(re.search(r"[A-Za-z]", text or ""))
+
+def is_bad_cached_translation(src, tr):
+    s = (src or "").strip()
+    t = (tr or "").strip()
+    norm = lambda x: re.sub(r"\s+", " ", (x or "").strip().lower())
+    if not t:
+        return True
+    if norm(s) == norm(t):
+        return True
+    # Mixed output like "Faulty return пружина" should be retranslated.
+    if has_cyrillic(t) and has_latin(t):
+        return True
+    # For English source, translation should usually contain Cyrillic.
+    if has_latin(s) and not has_cyrillic(t):
+        return True
+    return False
+
+def is_proper_name_text(text):
+    t = (text or "").strip()
+    if not t:
+        return False
+    known = ["HONDA", "VT250", "VT250F", "VT250-FII", "SUZUKI", "YAMAHA", "KAWASAKI"]
+    upper = t.upper()
+    if any(x in upper for x in known):
+        return True
+    # Mostly model/title tokens: uppercase + digits/hyphen only.
+    if re.fullmatch(r"[A-Z0-9\-\s]{3,}", upper):
+        return True
+    return False
+
+def sanitize_cache(cache):
+    cleaned = {}
+    dropped = 0
+    for k, v in cache.items():
+        if is_suspicious_text(k) or is_suspicious_text(v):
+            dropped += 1
+            continue
+        if FORCE_RETRANSLATE_BAD_CACHE and is_bad_cached_translation(k, v):
+            dropped += 1
+            continue
+        cleaned[k] = v
+    if dropped:
+        print(f"Removed {dropped} suspicious cache entries")
+    return cleaned, dropped
+
+TRANSLATION_CACHE, _cache_dropped = sanitize_cache(TRANSLATION_CACHE)
+if _cache_dropped:
+    save_cache()
+
+##############################################################################
+# TECH DICT
+##############################################################################
+TECH_DICT = {
+    "hub": "ступица", "bearing": "подшипник", "seal": "сальник",
+    "shaft": "вал", "washer": "шайба", "fork": "вилка",
+    "spring": "пружина", "clutch": "сцепление", "bolt": "болт",
+    "nut": "гайка", "pin": "штифт", "gear": "шестерня",
+    "brake": "тормоз", "chain": "цепь", "gasket": "прокладка",
+    "sprocket": "звезда", "piston": "поршень", "cylinder": "цилиндр",
+    "lever": "рычаг", "screw": "винт", "cover": "крышка",
+}
+
+PHRASE_DICT = {
+    "fairing": "обтекатель",
+    "pilot screw": "регулировочный винт",
+    "adjust pilot screw": "отрегулировать винт качества смеси",
+    "return spring": "возвратная пружина",
+    "throttle valve": "дроссельный клапан",
+    "throttle shaft": "дроссельный вал",
+    "function inspection": "проверка функции",
+    "synchronization inspection": "проверка синхронизации",
+    "correct, replace": "исправить, заменить",
+    "still not normal": "все еще не в норме",
+}
+
+##############################################################################
+# MODELS
+##############################################################################
+def make_ocr():
+    if OCR_PROFILE == "gpu_locked":
+        # Locked profile for PaddleOCR 3.x on WSL GPU.
+        try:
+            sig = inspect.signature(PaddleOCR.__init__)
+            params = sig.parameters
+            kwargs = {"lang": "en"}
+
+            if "text_det_limit_side_len" in params:
+                kwargs["text_det_limit_side_len"] = 4000
+            elif "det_limit_side_len" in params:
+                kwargs["det_limit_side_len"] = 4000
+
+            if "use_textline_orientation" in params:
+                kwargs["use_textline_orientation"] = True
+            elif "use_angle_cls" in params:
+                kwargs["use_angle_cls"] = True
+
+            if "device" in params:
+                kwargs["device"] = "gpu:0"
+            elif "use_gpu" in params:
+                kwargs["use_gpu"] = True
+
+            return PaddleOCR(**kwargs)
+        except Exception as e:
+            print(f"OCR gpu_locked init failed, fallback to auto profile: {e}")
+
+    try:
+        sig = inspect.signature(PaddleOCR.__init__)
+        params = sig.parameters
+        kwargs = {"lang": "en"}
+        if "text_det_limit_side_len" in params:
+            kwargs["text_det_limit_side_len"] = 4000
+        elif "det_limit_side_len" in params:
+            kwargs["det_limit_side_len"] = 4000
+        if "device" in params:
+            kwargs["device"] = "gpu:0"
+        elif "use_gpu" in params:
+            kwargs["use_gpu"] = True
+        return PaddleOCR(**kwargs)
+    except Exception as e:
+        print(f"OCR GPU init failed, fallback to CPU: {e}")
+        sig = inspect.signature(PaddleOCR.__init__)
+        params = sig.parameters
+        kwargs = {"lang": "en"}
+        if "text_det_limit_side_len" in params:
+            kwargs["text_det_limit_side_len"] = 4000
+        elif "det_limit_side_len" in params:
+            kwargs["det_limit_side_len"] = 4000
+        if "device" in params:
+            kwargs["device"] = "cpu"
+        elif "use_gpu" in params:
+            kwargs["use_gpu"] = False
+        return PaddleOCR(**kwargs)
+
+ocr = make_ocr()
+
+llm = Llama(
+    model_path=MODEL_PATH,
+    n_gpu_layers=-1,
+    n_ctx=8192,
+    n_batch=1024,
+    chat_format="qwen",  # Для Qwen3
+    verbose=False,
+)
+
+##############################################################################
+# HELPERS
+##############################################################################
+def polygon_to_rect(box):
+    xs = [p[0] for p in box]
+    ys = [p[1] for p in box]
+    return (int(min(xs)), int(min(ys)), int(max(xs)), int(max(ys)))
+
+def area(rect):
+    x1, y1, x2, y2 = rect
+    return (x2 - x1) * (y2 - y1)
+
+def sanitize_rect(rect, img_w, img_h):
+    x1, y1, x2, y2 = [int(round(x)) for x in rect]
+    x1, x2 = sorted((x1, x2))
+    y1, y2 = sorted((y1, y2))
+    x1 = max(0, min(x1, img_w - 1))
+    x2 = max(0, min(x2, img_w - 1))
+    y1 = max(0, min(y1, img_h - 1))
+    y2 = max(0, min(y2, img_h - 1))
+    if x2 - x1 < 4 or y2 - y1 < 4:
+        return None
+    return (x1, y1, x2, y2)
+
+def preprocess_variants(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    gray = clahe.apply(gray)
+    denoised = cv2.GaussianBlur(gray, (3, 3), 0)
+    otsu = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    return [
+        ("raw", img),
+        ("gray_clahe", gray),
+        ("otsu", otsu),
+    ]
+
+def parse_ocr_result(result, img_w, img_h):
+    blocks = []
+    if not result:
+        return blocks
+
+    first = result[0]
+
+    # PaddleOCR 3.x style: list of dict-like OCRResult objects.
+    if hasattr(first, "get"):
+        def as_seq(value):
+            if value is None:
+                return []
+            if isinstance(value, np.ndarray):
+                return value.tolist()
+            return value
+
+        polys = as_seq(first.get("rec_polys", []))
+        boxes = as_seq(first.get("rec_boxes", []))
+        texts = as_seq(first.get("rec_texts", []))
+        scores = as_seq(first.get("rec_scores", []))
+        for i, text in enumerate(texts):
+            if not text:
+                continue
+            score = float(scores[i]) if i < len(scores) else 1.0
+            if score < 0.20:
+                continue
+            clean_text = text[0] if isinstance(text, (list, tuple)) else str(text)
+            clean_text = clean_text.strip()
+            # Keep OCR blocks generous here; strict filtering is applied later
+            # when selecting label candidates and writing cache.
+            if not clean_text:
+                continue
+            rect = None
+            if i < len(boxes):
+                b = boxes[i]
+                if len(b) == 4:
+                    rect = (b[0], b[1], b[2], b[3])
+            if rect is None:
+                poly = polys[i] if i < len(polys) else None
+                if poly is None:
+                    continue
+                rect = polygon_to_rect(poly)
+            rect = sanitize_rect(rect, img_w, img_h)
+            if rect is None:
+                continue
+            blocks.append({"text": clean_text, "rect": rect, "area": area(rect), "score": score})
+        return blocks
+
+    # PaddleOCR 2.x style: result[0] = [ [box, (text, conf)], ... ]
+    for line in first:
+        if not line or len(line) < 2:
+            continue
+        box = line[0]
+        text_conf = line[1]
+        text = text_conf[0] if isinstance(text_conf, (list, tuple)) else str(text_conf)
+        conf = float(text_conf[1]) if isinstance(text_conf, (list, tuple)) and len(text_conf) > 1 else 1.0
+        if conf < 0.20:
+            continue
+        text = str(text).strip()
+        if not text:
+            continue
+        rect = sanitize_rect(polygon_to_rect(box), img_w, img_h)
+        if rect is None:
+            continue
+        blocks.append({"text": text, "rect": rect, "area": area(rect), "score": conf})
+    return blocks
+
+def run_ocr(image_or_path):
+    # PaddleOCR 3.x primary path.
+    if hasattr(ocr, "predict"):
+        try:
+            return ocr.predict(image_or_path)
+        except Exception:
+            pass
+    # Legacy fallback for 2.x compatibility.
+    if hasattr(ocr, "ocr"):
+        try:
+            return ocr.ocr(image_or_path, cls=True)
+        except Exception:
+            pass
+    return []
+
+def get_ocr_inputs(path, img):
+    # For PaddleOCR 2.x, direct file path input is the most stable.
+    if not USE_PREPROCESS_VARIANTS:
+        return [("raw_path", str(path))]
+
+    variants = [("raw_path", str(path))]
+    for variant_name, candidate in preprocess_variants(img):
+        if variant_name == "raw":
+            continue
+        fd, tmp_path = tempfile.mkstemp(prefix=f"ocr_{variant_name}_", suffix=".png")
+        os.close(fd)
+        cv2.imwrite(tmp_path, candidate)
+        variants.append((variant_name, tmp_path))
+    return variants
+
+def get_gpu_runtime_info():
+    info = {"ocr_profile": OCR_PROFILE, "use_preprocess_variants": USE_PREPROCESS_VARIANTS}
+    if paddle is None:
+        info["paddle_available"] = False
+        return info
+    info["paddle_available"] = True
+    try:
+        info["paddle_version"] = paddle.__version__
+    except Exception:
+        info["paddle_version"] = "unknown"
+    try:
+        info["compiled_with_cuda"] = bool(paddle.is_compiled_with_cuda())
+    except Exception:
+        info["compiled_with_cuda"] = None
+    try:
+        info["cuda_device_count"] = int(paddle.device.cuda.device_count())
+    except Exception:
+        info["cuda_device_count"] = None
+    return info
+
+def run_tesseract_ocr(img):
+    if pytesseract is None:
+        return []
+    try:
+        data = pytesseract.image_to_data(
+            cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
+            output_type=pytesseract.Output.DICT,
+            config="--oem 3 --psm 6",
+        )
+    except Exception as e:
+        print(f"Tesseract fallback unavailable: {e}")
+        return []
+
+    h, w = img.shape[:2]
+    blocks = []
+    n = len(data.get("text", []))
+    for i in range(n):
+        txt = (data["text"][i] or "").strip()
+        if not txt or is_suspicious_text(txt):
+            continue
+        conf_raw = data.get("conf", ["-1"] * n)[i]
+        try:
+            conf = float(conf_raw)
+        except Exception:
+            conf = -1
+        if conf < 45:
+            continue
+        x, y = int(data["left"][i]), int(data["top"][i])
+        bw, bh = int(data["width"][i]), int(data["height"][i])
+        rect = sanitize_rect((x, y, x + bw, y + bh), w, h)
+        if rect is None:
+            continue
+        blocks.append({"text": txt, "rect": rect, "area": area(rect), "score": conf / 100.0})
+    return blocks
+
+def score_blocks(blocks):
+    if not blocks:
+        return -9999.0
+    # Score should reflect OCR confidence and amount of detected text, not
+    # aggressive heuristic filtering (which can suppress valid flowchart text).
+    suspicious = sum(1 for b in blocks if is_suspicious_text(b["text"]))
+    good = len(blocks) - suspicious
+    avg_score = sum(float(b.get("score", 0.5)) for b in blocks) / len(blocks)
+    return good * 2 + avg_score * 2 - suspicious * 1.5
+
+def is_label_candidate(block, img_area, img_h):
+    text = block["text"].strip()
+    if len(text) < 2 or len(text) > 60:
+        return False
+    if len(text.split()) > 8:
+        return False
+    punct_chars = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+    punct = sum(1 for c in text if c in punct_chars)
+    if punct / max(1, len(text)) > 0.45:
+        return False
+    alpha = sum(1 for c in text if c.isalpha())
+    if alpha < 1:
+        return False
+    x1, y1, x2, y2 = block["rect"]
+    if y2 >= img_h * 0.985:
+        return False
+    if (x2 - x1) < 12 or (y2 - y1) < 12:
+        return False
+    area_ratio = block["area"] / img_area
+    # Label blocks on these diagrams are usually compact.
+    if area_ratio > 0.0022:
+        return False
+    return True
+
+def split_context_and_labels(blocks, img_area, img_h):
+    static_threshold = img_area * 0.003
+    label_blocks = [x for x in blocks if is_label_candidate(x, img_area, img_h)]
+    context_blocks = [x for x in blocks if x not in label_blocks]
+
+    # Fallback for difficult pages: use the smallest sane blocks as labels.
+    if not label_blocks and blocks:
+        geometric = []
+        for b in blocks:
+            x1, y1, x2, y2 = b["rect"]
+            bw, bh = x2 - x1, y2 - y1
+            if y2 >= img_h * 0.985:  # avoid footer noise strip
+                continue
+            if 12 <= bh <= 95 and 16 <= bw <= 520:
+                geometric.append(b)
+        geometric = sorted(geometric, key=lambda x: x["area"])
+        label_count = min(max(8, len(geometric) // 2), 35, len(geometric))
+        label_blocks = geometric[:label_count]
+        context_blocks = [x for x in blocks if x not in label_blocks]
+        if label_count:
+            print(f"⚠ Label fallback: using {label_count} geometric blocks")
+
+    # Keep some large context blocks for translation quality.
+    if not context_blocks and len(blocks) >= 3:
+        sorted_blocks = sorted(blocks, key=lambda x: x["area"], reverse=True)
+        context_blocks = sorted_blocks[:3]
+        label_blocks = [x for x in blocks if x not in context_blocks]
+        print("⚠ Using top-3 as context")
+
+    # Do not force all blocks as labels; this causes heavy page corruption.
+    if blocks and not label_blocks:
+        print("⚠ No label candidates found; page will be saved without rewrite")
+
+    return context_blocks, label_blocks, int(static_threshold)
+
+def is_large_block_candidate(block, img_area, img_h):
+    text = (block.get("text") or "").strip()
+    words = text.split()
+    if len(words) < 8 or len(words) > 45:
+        return False
+    if is_suspicious_text(text):
+        return False
+    x1, y1, x2, y2 = block["rect"]
+    if y2 >= img_h * 0.97:
+        return False
+    ratio = block["area"] / img_area
+    return 0.0025 <= ratio <= 0.05
+
+def estimate_background_color(source_img, rect):
+    h, w = source_img.shape[:2]
+    x1, y1, x2, y2 = rect
+    margin = 6
+    samples = []
+    regions = [
+        (max(0, y1 - margin), y1, x1, x2),               # top strip
+        (y2, min(h, y2 + margin), x1, x2),               # bottom strip
+        (y1, y2, max(0, x1 - margin), x1),               # left strip
+        (y1, y2, x2, min(w, x2 + margin)),               # right strip
+    ]
+    for ry1, ry2, rx1, rx2 in regions:
+        if ry2 > ry1 and rx2 > rx1:
+            region = source_img[ry1:ry2, rx1:rx2]
+            if region.size:
+                samples.append(region.reshape(-1, 3))
+    if not samples:
+        # Fallback: use inner region if perimeter is unavailable.
+        inner = source_img[max(0, y1):min(h, y2), max(0, x1):min(w, x2)]
+        if inner.size == 0:
+            return (245, 245, 245)
+        vals = np.median(inner.reshape(-1, 3), axis=0)
+        return tuple(int(v) for v in vals)
+    all_samples = np.concatenate(samples, axis=0)
+    vals = np.median(all_samples, axis=0)
+    return tuple(int(v) for v in vals)
+
+##############################################################################
+# MERGING
+##############################################################################
+def merge_horizontal(blocks):
+    blocks = sorted(blocks, key=lambda x: (x["rect"][1], x["rect"][0]))
+    result = []
+    while blocks:
+        current = blocks.pop(0)
+        changed = True
+        while changed:
+            changed = False
+            for b in blocks[:]:
+                x1, y1, x2, y2 = current["rect"]
+                bx1, by1, bx2, by2 = b["rect"]
+                h = ((y2 - y1) + (by2 - by1)) / 2
+                same_line = abs((y1 + y2) / 2 - (by1 + by2) / 2) < h * 0.5
+                gap = bx1 - x2
+                if same_line and 0 <= gap < h * 1.5:
+                    current["text"] += " " + b["text"]
+                    current["rect"] = (min(x1, bx1), min(y1, by1), max(x2, bx2), max(y2, by2))
+                    current["area"] = area(current["rect"])
+                    blocks.remove(b)
+                    changed = True
+                    break
+        result.append(current)
+    return result
+
+def merge_vertical(blocks):
+    merged = []
+    used = set()
+    for i, a in enumerate(blocks):
+        if i in used:
+            continue
+        ax1, ay1, ax2, ay2 = a["rect"]
+        current = [a]
+        for j, b in enumerate(blocks):
+            if i == j or j in used:
+                continue
+            bx1, by1, bx2, by2 = b["rect"]
+            h1, h2 = ay2 - ay1, by2 - by1
+            avg_h = (h1 + h2) / 2
+            vertical_gap = abs(by1 - ay2)
+            overlap = min(ax2, bx2) - max(ax1, bx1)
+            if vertical_gap < avg_h * 0.5 and overlap > (ax2 - ax1) * 0.7:
+                current.append(b)
+                used.add(j)
+        current = sorted(current, key=lambda x: x["rect"][1])
+        text = " ".join(x["text"] for x in current)
+        xs, ys = [], []
+        for c in current:
+            x1, y1, x2, y2 = c["rect"]
+            xs += [x1, x2]
+            ys += [y1, y2]
+        rect = (min(xs), min(ys), max(xs), max(ys))
+        merged.append({"text": text, "rect": rect, "area": area(rect)})
+    return merged
+
+##############################################################################
+# TRANSLATION
+##############################################################################
+def clean_llm_output(text):
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.S)
+    text = re.sub(r"<think>[\s\S]*$", "", text, flags=re.S)
+    text = re.sub(r"```json", "", text)
+    text = re.sub(r"```", "", text)
+    return text.strip()
+
+def parse_llm_translations(raw_text, expected_count):
+    cleaned = clean_llm_output(raw_text)
+    candidates = [cleaned]
+    m = re.search(r"\[[\s\S]*\]", cleaned)
+    if m:
+        candidates.insert(0, m.group(0).strip())
+
+    parsed = None
+    for candidate in candidates:
+        if not candidate:
+            continue
+        try:
+            parsed = json.loads(candidate)
+            break
+        except Exception:
+            continue
+
+    if not isinstance(parsed, list):
+        return None
+
+    translated = []
+    for item in parsed:
+        if isinstance(item, dict):
+            value = item.get("translation") or item.get("ru") or item.get("text")
+        elif isinstance(item, str):
+            value = item
+        else:
+            value = None
+        if value is None:
+            continue
+        translated.append(str(value).strip())
+
+    if not translated:
+        return None
+
+    if len(translated) < expected_count:
+        translated.extend([""] * (expected_count - len(translated)))
+    return translated[:expected_count]
+
+def parse_line_translations(raw_text, expected_count):
+    cleaned = clean_llm_output(raw_text)
+    lines = [x.strip() for x in cleaned.splitlines() if x.strip()]
+    out = [""] * expected_count
+    matched = 0
+    for line in lines:
+        m = re.match(r"^(\d+)\s*\|\|\|\s*(.+)$", line)
+        if not m:
+            continue
+        idx = int(m.group(1)) - 1
+        if 0 <= idx < expected_count:
+            out[idx] = m.group(2).strip()
+            matched += 1
+    if matched == 0:
+        return None
+    return out
+
+def normalize_for_compare(text):
+    return re.sub(r"\s+", " ", (text or "").strip().lower())
+
+def should_translate_label(text):
+    t = (text or "").strip()
+    if not t:
+        return False
+    if is_proper_name_text(t):
+        return False
+    t_low = t.lower()
+    if t.upper() in {"OK", "NG"}:
+        return False
+    if t_low in {"and left.", "or more.", "and left", "or more"}:
+        return False
+    if re.fullmatch(r"[\d\W_]+", t):
+        return False
+    if len(t) <= 2 and t.isalpha():
+        return False
+    if len(t.split()) == 1 and len(t) < 5:
+        return False
+    if len(t.split()) > 35:
+        return False
+    return True
+
+def is_context_term_candidate(block, img_h):
+    text = (block.get("text") or "").strip()
+    if not should_translate_label(text):
+        return False
+    if is_suspicious_text(text):
+        return False
+    x1, y1, x2, y2 = block["rect"]
+    if y2 >= img_h * 0.985:
+        return False
+    if len(text.split()) > 60:
+        return False
+    return True
+
+def cleanup_translation(source, translated):
+    src = (source or "").strip()
+    tr = (translated or "").strip()
+    if not tr:
+        return ""
+
+    # Prefer deterministic phrase translations where possible.
+    src_low = src.lower()
+    if src_low in PHRASE_DICT:
+        return PHRASE_DICT[src_low]
+
+    # Fix repeated words like "Replace Replace".
+    words = tr.split()
+    if len(words) >= 2 and words[0].lower() == words[1].lower():
+        tr = " ".join(words[1:])
+
+    # Apply phrase-level normalization on mixed output.
+    for en, ru in PHRASE_DICT.items():
+        tr = re.sub(rf"\b{re.escape(en)}\b", ru, tr, flags=re.I)
+
+    # If translation has no Cyrillic and equals source, treat as unchanged.
+    if normalize_for_compare(tr) == normalize_for_compare(src):
+        return src
+    return tr
+
+def fallback_translate_label(label):
+    parts = re.findall(r"[A-Za-z]+|[^A-Za-z]+", label)
+    translated_parts = []
+    changed = False
+    for p in parts:
+        key = p.lower()
+        if key in TECH_DICT:
+            translated_parts.append(TECH_DICT[key])
+            changed = True
+        else:
+            translated_parts.append(p)
+    if changed:
+        return "".join(translated_parts)
+    return label
+
+def translate_labels(context, labels, debug=None):
+    if not labels:
+        return []
+    
+    result = [""] * len(labels)
+    to_translate = []
+    mapping = []
+    
+    for i, label in enumerate(labels):
+        key = label.strip().lower()
+        if not should_translate_label(label):
+            result[i] = label
+            continue
+        if key in PHRASE_DICT:
+            result[i] = PHRASE_DICT[key]
+            continue
+        if key in TECH_DICT:
+            result[i] = TECH_DICT[key]
+            continue
+        if key in TRANSLATION_CACHE:
+            cached = TRANSLATION_CACHE[key]
+            if FORCE_RETRANSLATE_BAD_CACHE and is_bad_cached_translation(label, cached):
+                TRANSLATION_CACHE.pop(key, None)
+            else:
+                result[i] = cached
+                continue
+        mapping.append(i)
+        to_translate.append(label)
+
+    if debug is not None:
+        append_debug(
+            debug,
+            "llm.prepare",
+            labels_total=len(labels),
+            to_translate=len(to_translate),
+            context_len=len(context),
+            labels_preview=labels[:8],
+        )
+        
+    if not to_translate:
+        print("All in cache/dict, skipping LLM")
+        return result
+
+    labels_text = "\n".join(f"{i+1}. {x}" for i, x in enumerate(to_translate))
+    prompt = f"""Context:
+{context}
+
+Translate these labels to Russian (automotive terms):
+{labels_text}
+
+Output ONLY JSON array:
+"""
+    
+    print(f"CONTEXT LEN: {len(context)}")
+    print(f"Sending {len(to_translate)} labels to LLM...")
+
+    response = llm.create_chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a translator. Do not explain. Output valid JSON array only."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0,
+        top_p=0.1,
+        max_tokens=1024,
+        stop=["</think>"]  # БЕЗ пробелов!
+    )
+    
+    txt = response["choices"][0]["message"]["content"]
+    translated = parse_llm_translations(txt, len(to_translate))
+    parse_mode = "json"
+
+    if translated is None:
+        retry_prompt = f"""Translate labels to Russian (automotive terms).
+Return EXACTLY one line per item in this format:
+N|||translation
+
+Items:
+{labels_text}
+"""
+        retry = llm.create_chat_completion(
+            messages=[
+                {"role": "system", "content": "Return only lines in format N|||translation. No explanations."},
+                {"role": "user", "content": retry_prompt}
+            ],
+            temperature=0,
+            top_p=0.1,
+            max_tokens=1024,
+        )
+        retry_txt = retry["choices"][0]["message"]["content"]
+        translated = parse_line_translations(retry_txt, len(to_translate))
+        txt = retry_txt if translated is not None else txt
+        parse_mode = "line"
+
+    if debug is not None:
+        append_debug(
+            debug,
+            "llm.response",
+            parsed=translated is not None,
+            parse_mode=parse_mode,
+            raw_preview=(txt or "")[:800],
+        )
+    if translated is not None:
+        print(f"✓ Translated {len([x for x in translated if x])} labels")
+    else:
+        print("✗ LLM ERROR: failed to parse JSON translations")
+        print(f"Raw: {clean_llm_output(txt)[:500]}")
+        translated = [fallback_translate_label(x) for x in to_translate]
+
+    for idx, tr in zip(mapping, translated):
+        cleaned = cleanup_translation(labels[idx], tr)
+        if not cleaned:
+            cleaned = labels[idx]
+        result[idx] = cleaned
+        source = labels[idx].strip().lower()
+        tr_norm = result[idx]
+        # Do not cache unchanged English text; it pollutes future runs.
+        same_text = source == tr_norm.strip().lower()
+        has_cyrillic = bool(re.search(r"[А-Яа-яЁё]", tr_norm or ""))
+        if source and (not same_text) and has_cyrillic and not is_suspicious_text(source) and not is_suspicious_text(tr_norm):
+            TRANSLATION_CACHE[source] = tr_norm
+
+    if debug is not None:
+        append_debug(
+            debug,
+            "llm.final",
+            translated_preview=result[:12],
+            cache_size=len(TRANSLATION_CACHE),
+        )
+        
+    save_cache()
+    return result
+
+##############################################################################
+# RENDER
+##############################################################################
+def fit_text(draw, text, rect):
+    x1, y1, x2, y2 = rect
+    w, h = x2 - x1, y2 - y1
+    words = text.split()
+
+    def _wrap_words(font, max_width):
+        if not words:
+            return [text]
+        lines = []
+        current = ""
+        for word in words:
+            candidate = (current + " " + word).strip()
+            cbox = draw.textbbox((0, 0), candidate, font=font)
+            cw = cbox[2] - cbox[0]
+            if cw <= max_width or not current:
+                current = candidate
+            else:
+                lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+        return lines or [text]
+
+    font_size = max(12, int(h * 0.78))
+    while font_size > 8:
+        font = ImageFont.truetype(FONT_PATH, font_size)
+        lines = _wrap_words(font, max(1, w - 4))
+        line_box = draw.textbbox((0, 0), "Ag", font=font)
+        line_h = line_box[3] - line_box[1]
+        total_h = line_h * len(lines) + 2 * max(0, len(lines) - 1)
+        max_w = 0
+        for line in lines:
+            lb = draw.textbbox((0, 0), line, font=font)
+            max_w = max(max_w, lb[2] - lb[0])
+        if max_w <= w - 2 and total_h <= h - 2:
+            return font, "\n".join(lines)
+        font_size -= 1
+
+    fallback = ImageFont.truetype(FONT_PATH, 10)
+    return fallback, text
+
+def erase_text_region(img, rect, source_img):
+    h, w = img.shape[:2]
+    safe = sanitize_rect(rect, w, h)
+    if safe is None:
+        return img
+    x1, y1, x2, y2 = safe
+    bg = estimate_background_color(source_img, safe)
+    expand = 2
+    ex1 = max(0, x1 - expand)
+    ey1 = max(0, y1 - expand)
+    ex2 = min(w - 1, x2 + expand)
+    ey2 = min(h - 1, y2 + expand)
+    cv2.rectangle(img, (ex1, ey1), (ex2, ey2), bg, -1)
+    return img
+
+def draw_translation(img, rect, text, source_img):
+    h, w = img.shape[:2]
+    safe = sanitize_rect(rect, w, h)
+    if safe is None:
+        return img
+    x1, y1, x2, y2 = safe
+    crop = img[y1:y2, x1:x2]
+    if crop.size == 0:
+        return img
+    
+    bg = estimate_background_color(source_img, safe)
+    pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(pil)
+    font, wrapped = fit_text(draw, text, safe)
+    bbox = draw.multiline_textbbox((0, 0), wrapped, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    tx = x1 + (x2 - x1 - tw) // 2
+    ty = y1 + (y2 - y1 - th) // 2
+    brightness = (bg[0] + bg[1] + bg[2]) / 3.0
+    text_color = (0, 0, 0) if brightness > 128 else (255, 255, 255)
+    draw.multiline_text((tx, ty), wrapped, fill=text_color, font=font, align="center", spacing=2)
+    return cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
+
+##############################################################################
+# PROCESS
+##############################################################################
+def process_image(path):
+    print(f"\n{'='*40}\nProcessing: {path}")
+    debug = {
+        "file": str(path),
+        "file_name": path.name,
+        "started_at": datetime.now().isoformat(timespec="seconds"),
+    }
+    
+    img = cv2.imread(str(path), cv2.IMREAD_COLOR)  # ЦВЕТ!
+    if img is None:
+        print(f"Failed to read: {path}")
+        append_debug(debug, "read.error", reason="cv2.imread returned None")
+        log_path = write_debug_log(debug)
+        print(f"Debug log: {log_path}")
+        return
+        
+    h, w = img.shape[:2]
+    source_img = img.copy()
+    img_area = h * w
+    print(f"Size: {w}x{h}, area: {img_area}")
+    append_debug(debug, "read.ok", width=w, height=h, area=img_area)
+    append_debug(debug, "runtime.gpu", **get_gpu_runtime_info())
+    
+    best_blocks = []
+    best_name = "raw_path"
+    best_score = -9999.0
+    for variant_name, candidate in get_ocr_inputs(path, img):
+        try:
+            result = run_ocr(candidate)
+            parsed = parse_ocr_result(result, w, h)
+            current_score = score_blocks(parsed)
+            append_debug(
+                debug,
+                "ocr.variant",
+                variant=variant_name,
+                parsed_blocks=len(parsed),
+                score=round(current_score, 3),
+                sample_texts=[x["text"] for x in parsed[:8]],
+                input_type="path" if isinstance(candidate, str) else "image",
+            )
+            if current_score > best_score:
+                best_blocks = parsed
+                best_name = variant_name
+                best_score = current_score
+        except Exception as e:
+            print(f"OCR failed for variant {variant_name}: {e}")
+            append_debug(debug, "ocr.variant.error", variant=variant_name, error=str(e))
+
+    if USE_TESSERACT_FALLBACK:
+        tesseract_blocks = run_tesseract_ocr(img)
+        tesseract_score = score_blocks(tesseract_blocks)
+        paddle_weak = (len(best_blocks) < 8) or (best_score < 25)
+        if paddle_weak and tesseract_score > best_score + 10:
+            best_blocks = tesseract_blocks
+            best_name = "tesseract_fallback"
+            best_score = tesseract_score
+
+    if not best_blocks:
+        print("No text detected")
+        append_debug(debug, "ocr.empty")
+        out_path, ready_path = save_outputs(img, path)
+        append_debug(debug, "save.raw", output=str(out_path), ready=str(ready_path))
+        log_path = write_debug_log(debug)
+        print(f"Debug log: {log_path}")
+        return
+
+    print(f"OCR variant selected: {best_name}, blocks: {len(best_blocks)}, quality: {best_score:.2f}")
+    append_debug(
+        debug,
+        "ocr.selected",
+        variant=best_name,
+        blocks=len(best_blocks),
+        score=round(best_score, 3),
+    )
+    blocks = best_blocks
+
+    blocks = merge_horizontal(blocks)
+    blocks = merge_vertical(blocks)
+    print(f"Merged blocks: {len(blocks)}")
+    append_debug(debug, "merge.done", merged_blocks=len(blocks), merged_preview=[b["text"] for b in blocks[:10]])
+    
+    areas = sorted([b["area"] for b in blocks], reverse=True)
+    print(f"Block areas (top 10): {areas[:10]}")
+    context_blocks, label_blocks, threshold = split_context_and_labels(blocks, img_area, h)
+    print(f"0.3% threshold: {threshold}")
+    if TRANSLATE_LARGE_BLOCKS and context_blocks:
+        extra = [b for b in context_blocks if is_large_block_candidate(b, img_area, h)]
+        extra = sorted(extra, key=lambda x: x["area"], reverse=True)[:3]
+        if extra:
+            for e in extra:
+                if e not in label_blocks:
+                    label_blocks.append(e)
+            append_debug(
+                debug,
+                "split.large_blocks",
+                added=len(extra),
+                preview=[x["text"] for x in extra],
+            )
+    # Include more terminology lines from context area, excluding proper names.
+    if context_blocks:
+        term_blocks = [b for b in context_blocks if is_context_term_candidate(b, h)]
+        if term_blocks:
+            for b in term_blocks:
+                if b not in label_blocks:
+                    label_blocks.append(b)
+            append_debug(
+                debug,
+                "split.context_terms",
+                added=len(term_blocks),
+                preview=[x["text"] for x in term_blocks[:8]],
+            )
+    
+    print(f"Context: {len(context_blocks)}, Labels: {len(label_blocks)}")
+    append_debug(
+        debug,
+        "split.done",
+        threshold=threshold,
+        context_count=len(context_blocks),
+        labels_count=len(label_blocks),
+        context_preview=[x["text"] for x in context_blocks[:8]],
+        labels_preview=[x["text"] for x in label_blocks[:12]],
+    )
+
+    context = "\n".join(x["text"] for x in context_blocks)
+    if len(context_blocks) > 8:
+        top_context = sorted(context_blocks, key=lambda x: x["area"], reverse=True)[:8]
+        context = "\n".join(x["text"] for x in top_context)
+        append_debug(debug, "split.context_trim", original=len(context_blocks), used=8)
+    labels = [x["text"] for x in label_blocks]
+
+    if not labels:
+        print("No labels!")
+        out_path, ready_path = save_outputs(img, path)
+        append_debug(debug, "save.no_labels", output=str(out_path), ready=str(ready_path))
+        log_path = write_debug_log(debug)
+        print(f"Debug log: {log_path}")
+        return
+
+    translations = translate_labels(context, labels, debug=debug)
+
+    placements = []
+    for block, tr in zip(label_blocks, translations):
+        if not (tr or "").strip():
+            continue
+        if normalize_for_compare(tr) == normalize_for_compare(block["text"]):
+            continue
+        placements.append({
+            "src": block["text"],
+            "dst": tr,
+            "rect": block["rect"],
+        })
+    # Two-pass render: erase English first, then draw Russian to avoid overlaps.
+    for p in placements:
+        img = erase_text_region(img, p["rect"], source_img)
+    for p in placements:
+        img = draw_translation(img, p["rect"], p["dst"], source_img)
+    append_debug(debug, "render.done", placements_count=len(placements), placements=placements[:40])
+
+    out_path, ready_path = save_outputs(img, path)
+    print(f"✓ Saved: {out_path}")
+    append_debug(debug, "save.done", output=str(out_path), ready=str(ready_path))
+    log_path = write_debug_log(debug)
+    print(f"Debug log: {log_path}")
+
+##############################################################################
+# MAIN
+##############################################################################
+def main():
+    files = []
+    for ext in ("*.jpg", "*.jpeg", "*.JPG", "*.JPEG", "*.png", "*.PNG"):
+        files.extend(Path(INPUT_DIR).rglob(ext))
+        
+    print(f"Found {len(files)} images")
+    
+    for f in files:
+        try:
+            process_image(f)
+        except Exception as e:
+            print(f"Error {f}: {e}")
+            import traceback
+            traceback.print_exc()
+
+if __name__ == "__main__":
+    main()

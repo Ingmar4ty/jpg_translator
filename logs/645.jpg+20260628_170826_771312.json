@@ -1,0 +1,573 @@
+{
+  "file": "files/645.jpg",
+  "file_name": "645.jpg",
+  "started_at": "2026-06-28T16:58:51",
+  "events": [
+    {
+      "timestamp": "2026-06-28T16:58:51",
+      "stage": "read.ok",
+      "data": {
+        "width": 1246,
+        "height": 1648,
+        "area": 2053408
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:58:51",
+      "stage": "runtime.gpu",
+      "data": {
+        "ocr_profile": "gpu_locked",
+        "use_preprocess_variants": false,
+        "paddle_available": true,
+        "paddle_version": "3.3.0",
+        "compiled_with_cuda": true,
+        "cuda_device_count": 1
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:58:57",
+      "stage": "ocr.variant",
+      "data": {
+        "variant": "raw_path",
+        "parsed_blocks": 70,
+        "score": 138.496,
+        "sample_texts": [
+          "HONDA",
+          "VT250F",
+          "TROUBLESHOOTING",
+          "Unsmooth lowering of rpm",
+          "Throttle grip play: 2~6mm",
+          "Wiring",
+          "Improper ignition timing",
+          "Insufficient compression"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:58:57",
+      "stage": "ocr.selected",
+      "data": {
+        "variant": "raw_path",
+        "blocks": 70,
+        "score": 138.496
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:58:57",
+      "stage": "merge.done",
+      "data": {
+        "merged_blocks": 52,
+        "merged_preview": [
+          "1",
+          "2345 Faulty bi-starter cap",
+          "HONDA",
+          "Faulty setting of choke cable",
+          "Faulty junction box Faulty return spring",
+          "Warpage of bi-starter valve",
+          "Disassemble and inspect carburetor Faulty mounting of pilot screw Clogged strainer screen",
+          "VT250F",
+          "Clogged slow circuit Extensive carbon adhesion to (at float valve seat)",
+          "throttle bore"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:58:57",
+      "stage": "split.done",
+      "data": {
+        "context_count": 5,
+        "labels_count": 40,
+        "context_preview": [
+          "Disassemble and inspect carburetor Faulty mounting of pilot screw Clogged strainer screen",
+          "Clogged slow circuit Extensive carbon adhesion to (at float valve seat)",
+          "Faulty spark unit Inspect tappet clearance Valve pressure leakage.",
+          "2345 Faulty bi-starter cap",
+          "Throttle shaft malfunctioning Faulty return spring"
+        ],
+        "labels_preview": [
+          "2345 Faulty bi-starter cap",
+          "Faulty setting of choke cable",
+          "Faulty junction box Faulty return spring",
+          "Warpage of bi-starter valve",
+          "Disassemble and inspect carburetor Faulty mounting of pilot screw Clogged strainer screen",
+          "Clogged slow circuit Extensive carbon adhesion to (at float valve seat)",
+          "throttle bore",
+          "Bi-starter valve return",
+          "inspection",
+          "Adjust",
+          "Correct",
+          "Correct, replace Correct, replace",
+          "Replace Correct",
+          "Difference between cylinders is 40mmHg",
+          "or more."
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:58:57",
+      "stage": "llm.prepare",
+      "data": {
+        "labels_total": 40,
+        "to_translate": 27,
+        "context_len": 306,
+        "labels_preview": [
+          "2345 Faulty bi-starter cap",
+          "Faulty setting of choke cable",
+          "Faulty junction box Faulty return spring",
+          "Warpage of bi-starter valve",
+          "Disassemble and inspect carburetor Faulty mounting of pilot screw Clogged strainer screen",
+          "Clogged slow circuit Extensive carbon adhesion to (at float valve seat)",
+          "throttle bore",
+          "Bi-starter valve return"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T17:08:25",
+      "stage": "llm.response",
+      "data": {
+        "parsed": true,
+        "parse_mode": "json",
+        "raw_preview": "<think>\nOkay, let's tackle this translation task. The user wants all items translated from English to Russian, specifically for a motorcycle repair manual. First, I need to make sure I understand the rules properly.\n\nThey mentioned translating every item, even short words like 'Clean' or 'Replace'. So no skipping any terms. Also, lines with phrases like 'Clogged slow circuit ........ Clean' should be translated as whole sentences. Brand names like Honda and VT250F stay the same, as do abbreviations like NG and OK.\n\nLooking at the items provided, I need to go through each one carefully. Let's start with item 1: \"2345 Faulty bi-starter cap\". The number 2345 should remain unchanged, and \"bi-starter\" might be a technical term. In Russian, it could be \"бистартёрный\" or maybe \"двухступенчатый\", "
+      }
+    },
+    {
+      "timestamp": "2026-06-28T17:08:25",
+      "stage": "llm.final",
+      "data": {
+        "translated_preview": [
+          "2345 Неисправный би-стартерный корпус",
+          "Неправильная настройка кабеля дросселя",
+          "Неисправный разъемный корпус Неисправная возвратная пружина",
+          "Изгиб би-стартерного клапана",
+          "Разборка и осмотр карбюратора Неправильная установка винта регулировки холостого хода Засоренный фильтрующий экран",
+          "Засоренная медленная цепь Интенсивное прилипание угля к (на седле клапана поплавка)",
+          "канал дросселя",
+          "Возврат би-стартерного клапана",
+          "осмотр",
+          "отрегулировать",
+          "исправить",
+          "Исправить, заменить Исправить, заменить"
+        ],
+        "cache_size": 38
+      }
+    },
+    {
+      "timestamp": "2026-06-28T17:08:26",
+      "stage": "render.done",
+      "data": {
+        "placements_count": 40,
+        "placements": [
+          {
+            "src": "2345 Faulty bi-starter cap",
+            "dst": "2345 Неисправный би-стартерный корпус",
+            "rect": [
+              84,
+              623,
+              277,
+              699
+            ]
+          },
+          {
+            "src": "Faulty setting of choke cable",
+            "dst": "Неправильная настройка кабеля дросселя",
+            "rect": [
+              111,
+              605,
+              346,
+              628
+            ]
+          },
+          {
+            "src": "Faulty junction box Faulty return spring",
+            "dst": "Неисправный разъемный корпус Неисправная возвратная пружина",
+            "rect": [
+              111,
+              626,
+              276,
+              683
+            ]
+          },
+          {
+            "src": "Warpage of bi-starter valve",
+            "dst": "Изгиб би-стартерного клапана",
+            "rect": [
+              110,
+              681,
+              326,
+              700
+            ]
+          },
+          {
+            "src": "Disassemble and inspect carburetor Faulty mounting of pilot screw Clogged strainer screen",
+            "dst": "Разборка и осмотр карбюратора Неправильная установка винта регулировки холостого хода Засоренный фильтрующий экран",
+            "rect": [
+              114,
+              1161,
+              388,
+              1270
+            ]
+          },
+          {
+            "src": "Clogged slow circuit Extensive carbon adhesion to (at float valve seat)",
+            "dst": "Засоренная медленная цепь Интенсивное прилипание угля к (на седле клапана поплавка)",
+            "rect": [
+              140,
+              1179,
+              370,
+              1288
+            ]
+          },
+          {
+            "src": "throttle bore",
+            "dst": "канал дросселя",
+            "rect": [
+              140,
+              1233,
+              242,
+              1252
+            ]
+          },
+          {
+            "src": "Bi-starter valve return",
+            "dst": "Возврат би-стартерного клапана",
+            "rect": [
+              227,
+              410,
+              401,
+              427
+            ]
+          },
+          {
+            "src": "inspection",
+            "dst": "осмотр",
+            "rect": [
+              226,
+              428,
+              309,
+              447
+            ]
+          },
+          {
+            "src": "Adjust",
+            "dst": "отрегулировать",
+            "rect": [
+              307,
+              973,
+              365,
+              997
+            ]
+          },
+          {
+            "src": "Correct",
+            "dst": "исправить",
+            "rect": [
+              411,
+              604,
+              474,
+              623
+            ]
+          },
+          {
+            "src": "Correct, replace Correct, replace",
+            "dst": "Исправить, заменить Исправить, заменить",
+            "rect": [
+              412,
+              623,
+              540,
+              660
+            ]
+          },
+          {
+            "src": "Replace Correct",
+            "dst": "Заменить Исправить",
+            "rect": [
+              412,
+              660,
+              479,
+              696
+            ]
+          },
+          {
+            "src": "Difference between cylinders is 40mmHg",
+            "dst": "Разница между цилиндрами составляет 40 мм рт. ст.",
+            "rect": [
+              413,
+              911,
+              582,
+              949
+            ]
+          },
+          {
+            "src": "or more.",
+            "dst": "или более.",
+            "rect": [
+              413,
+              950,
+              484,
+              966
+            ]
+          },
+          {
+            "src": "Clean",
+            "dst": "очистить",
+            "rect": [
+              431,
+              1181,
+              481,
+              1200
+            ]
+          },
+          {
+            "src": "Correct, replace",
+            "dst": "исправить, заменить",
+            "rect": [
+              432,
+              1199,
+              559,
+              1217
+            ]
+          },
+          {
+            "src": "Clean Clean",
+            "dst": "Очистить",
+            "rect": [
+              430,
+              1232,
+              481,
+              1288
+            ]
+          },
+          {
+            "src": "Unsmooth lowering of rpm",
+            "dst": "неравномерное снижение оборотов",
+            "rect": [
+              518,
+              187,
+              735,
+              212
+            ]
+          },
+          {
+            "src": "Synchronization inspection",
+            "dst": "проверка синхронизации",
+            "rect": [
+              514,
+              789,
+              734,
+              809
+            ]
+          },
+          {
+            "src": "Throttle grip play: 2~6mm Improper ignition timing",
+            "dst": "Свобода хвата дросселя: 2~6 мм Неправильное время зажигания",
+            "rect": [
+              662,
+              236,
+              889,
+              295
+            ]
+          },
+          {
+            "src": "Wiring",
+            "dst": "Проводка",
+            "rect": [
+              662,
+              257,
+              718,
+              278
+            ]
+          },
+          {
+            "src": "Insufficient compression Cab insulator leak",
+            "dst": "Недостаточная компрессия Утечка изолятора цилиндра",
+            "rect": [
+              664,
+              294,
+              861,
+              328
+            ]
+          },
+          {
+            "src": "Faulty spark unit Inspect tappet clearance Valve pressure leakage.",
+            "dst": "Неисправный искровой элемент Проверить зазор толкателя Утечка давления клапана",
+            "rect": [
+              702,
+              1374,
+              901,
+              1468
+            ]
+          },
+          {
+            "src": "Faulty pulse generator Inspect valve timing",
+            "dst": "Неисправный генератор импульсов Проверить фазы клапанов",
+            "rect": [
+              702,
+              1393,
+              886,
+              1450
+            ]
+          },
+          {
+            "src": "Throttle shaft malfunctioning Faulty return spring",
+            "dst": "Неисправность вала дросселя Неисправная возвратная пружина",
+            "rect": [
+              732,
+              579,
+              976,
+              639
+            ]
+          },
+          {
+            "src": "Faulty throttle valve.",
+            "dst": "Неисправный клапан дросселя.",
+            "rect": [
+              733,
+              599,
+              904,
+              619
+            ]
+          },
+          {
+            "src": "Check that engine rpm changes (50~100 rpm)",
+            "dst": "Проверьте, изменяется ли частота вращения двигателя (50~100 об/мин)",
+            "rect": [
+              726,
+              974,
+              1101,
+              998
+            ]
+          },
+          {
+            "src": "by turning pilot screw by 1~2 turns to right",
+            "dst": "повернув винт регулировки холостого хода на 1~2 оборота вправо",
+            "rect": [
+              726,
+              993,
+              1085,
+              1018
+            ]
+          },
+          {
+            "src": "and left.",
+            "dst": "и влево.",
+            "rect": [
+              727,
+              1017,
+              799,
+              1035
+            ]
+          },
+          {
+            "src": "Carburetor throttle link mechanism",
+            "dst": "Механизм связи дросселя карбюратора",
+            "rect": [
+              787,
+              402,
+              1074,
+              422
+            ]
+          },
+          {
+            "src": "function inspection",
+            "dst": "проверка функциональности",
+            "rect": [
+              788,
+              424,
+              945,
+              440
+            ]
+          },
+          {
+            "src": "Adjust pilot screw",
+            "dst": "отрегулировать регулировочный винт",
+            "rect": [
+              844,
+              1207,
+              993,
+              1228
+            ]
+          },
+          {
+            "src": "Correct, replace",
+            "dst": "исправить, заменить",
+            "rect": [
+              1003,
+              574,
+              1135,
+              596
+            ]
+          },
+          {
+            "src": "Replace",
+            "dst": "заменить",
+            "rect": [
+              1006,
+              596,
+              1073,
+              615
+            ]
+          },
+          {
+            "src": "Replace",
+            "dst": "заменить",
+            "rect": [
+              1006,
+              614,
+              1073,
+              633
+            ]
+          },
+          {
+            "src": "Still not normal",
+            "dst": "всё ещё не в норме",
+            "rect": [
+              1050,
+              1280,
+              1179,
+              1301
+            ]
+          },
+          {
+            "src": "Change Adjust",
+            "dst": "Изменить Настроить",
+            "rect": [
+              1060,
+              1369,
+              1120,
+              1425
+            ]
+          },
+          {
+            "src": "Change Adjust",
+            "dst": "Изменить Настроить",
+            "rect": [
+              1060,
+              1387,
+              1121,
+              1444
+            ]
+          },
+          {
+            "src": "Correct, replace",
+            "dst": "исправить, заменить",
+            "rect": [
+              1061,
+              1440,
+              1190,
+              1462
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T17:08:26",
+      "stage": "save.done",
+      "data": {
+        "output": "output/645.jpg",
+        "ready": "/mnt/e/repos/translations/ready/645+20260628_170826+.jpg"
+      }
+    }
+  ]
+}

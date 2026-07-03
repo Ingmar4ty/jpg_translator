@@ -1,0 +1,104 @@
+{
+  "file": "files/645.jpg",
+  "file_name": "645.jpg",
+  "started_at": "2026-06-27T22:11:46",
+  "events": [
+    {
+      "timestamp": "2026-06-27T22:11:46",
+      "stage": "read.ok",
+      "data": {
+        "width": 1246,
+        "height": 1648,
+        "area": 2053408
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:11:46",
+      "stage": "runtime.gpu",
+      "data": {
+        "ocr_profile": "gpu_locked",
+        "use_preprocess_variants": false,
+        "paddle_available": true,
+        "paddle_version": "2.6.2",
+        "compiled_with_cuda": true,
+        "cuda_device_count": 1
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:11:49",
+      "stage": "ocr.variant",
+      "data": {
+        "variant": "raw_path",
+        "parsed_blocks": 34,
+        "score": -48.909,
+        "sample_texts": [
+          "gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6",
+          "AmK,<hF'7cA\"2^<{7vT2qO AlJ+<",
+          "AmK,<hF'7cA\"2^<{7vT2qO AlJ+<",
+          "gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6",
+          "AmK,<hF'7cA\"2^<{7vT2qO AlJ+<"
+        ],
+        "input_type": "path"
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:11:49",
+      "stage": "ocr.selected",
+      "data": {
+        "variant": "raw_path",
+        "blocks": 34,
+        "score": -48.909
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:11:49",
+      "stage": "merge.done",
+      "data": {
+        "merged_blocks": 25,
+        "merged_preview": [
+          "gE&7b@!2];zX6uS@;6 AmK,<hF'7cA\"2^<{7vT2qO AlJ+< gE&7b@!2];zX6uS@;6 AmK,<hF'7cA\"2^<{7vT2qO AlJ+<",
+          "gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6 AmK,<hF'7cA\"2^<{7vT2qO AlJ+<",
+          "AmK,<hF'7cA\"2^<{7vT2qO AlJ+<",
+          "AmK,<hF'7cA\"2^<{7vT2qO AlJ+< gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6 AmK,<hF'7cA\"2^<{7vT2qO AlJ+< AmK,<hF'7cA\"2^<{7vT2qO AlJ+< gE&7b@!2];zX6uS@;6",
+          "AmK,<hF'7cA\"2^<{7vT2qO AlJ+< gE&7b@!2];zX6uS@;6"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:11:49",
+      "stage": "split.done",
+      "data": {
+        "threshold": 6160,
+        "context_count": 25,
+        "labels_count": 0,
+        "context_preview": [
+          "gE&7b@!2];zX6uS@;6 AmK,<hF'7cA\"2^<{7vT2qO AlJ+< gE&7b@!2];zX6uS@;6 AmK,<hF'7cA\"2^<{7vT2qO AlJ+<",
+          "gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6 AmK,<hF'7cA\"2^<{7vT2qO AlJ+<",
+          "AmK,<hF'7cA\"2^<{7vT2qO AlJ+<",
+          "AmK,<hF'7cA\"2^<{7vT2qO AlJ+< gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6",
+          "gE&7b@!2];zX6uS@;6"
+        ],
+        "labels_preview": []
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:11:49",
+      "stage": "save.no_labels",
+      "data": {
+        "output": "output/645.jpg",
+        "ready": "/mnt/e/repos/translations/ready/645+20260627_221149+.jpg"
+      }
+    }
+  ]
+}

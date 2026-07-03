@@ -1,7 +1,26 @@
-numpy==2.2.6
-opencv-python==4.12.0.88
+# ---------- Core ----------
+
+numpy==1.26.4
 Pillow==11.3.0
-paddleocr==3.2.0
-llama-cpp-python==0.3.16
-rapidfuzz==3.14.1
+opencv-python==4.10.0.84
+
+# ---------- OCR ----------
+
+paddleocr==3.7.0
+paddlepaddle-gpu==3.3.0
+
+# ---------- LLM ----------
+
+llama-cpp-python==0.3.9
+
+# ---------- Utilities ----------
+
 tqdm==4.67.1
+orjson==3.11.0
+rapidfuzz==3.13.0
+
+# ---------- Optional ----------
+
+matplotlib==3.10.5
+scikit-image==0.25.2
+pytesseract==0.3.13

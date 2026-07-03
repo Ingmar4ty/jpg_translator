@@ -1,0 +1,159 @@
+{
+  "file": "files/645.jpg",
+  "file_name": "645.jpg",
+  "started_at": "2026-06-28T23:36:00",
+  "events": [
+    {
+      "timestamp": "2026-06-28T23:36:01",
+      "stage": "read.ok",
+      "data": {
+        "width": 1246,
+        "height": 1648
+      }
+    },
+    {
+      "timestamp": "2026-06-28T23:36:30",
+      "stage": "ocr.raw",
+      "data": {
+        "count": 70,
+        "sample": [
+          "HONDA",
+          "VT250F",
+          "TROUBLESHOOTING",
+          "Unsmooth lowering of rpm",
+          "Throttle grip play: 2~6mm",
+          "Wiring",
+          "Improper ignition timing",
+          "Insufficient compression",
+          "Cab insulator leak",
+          "Bi-starter valve return"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T23:36:30",
+      "stage": "filter.done",
+      "data": {
+        "translatable": 56,
+        "skipped": 12,
+        "texts": [
+          "Unsmooth lowering of rpm",
+          "Throttle grip play: 2~6mm",
+          "Wiring",
+          "Improper ignition timing",
+          "Insufficient compression",
+          "Cab insulator leak",
+          "Carburetor throttle link mechanism",
+          "Bi-starter valve return",
+          "function inspection",
+          "inspection",
+          "Correct, replace",
+          "Throttle shaft malfunctioning",
+          "Replace",
+          "Faulty throttle valve.",
+          "Correct",
+          "Faulty setting of choke cable",
+          "Replace",
+          "Faulty return spring",
+          "2345 Faulty return spring Faulty bi-starter cap",
+          "Correct, replace"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T23:36:30",
+      "stage": "paragraphs.done",
+      "data": {
+        "total": 26,
+        "multi_line": 12,
+        "sample": [
+          "Unsmooth lowering of rpm",
+          "Throttle grip play: 2~6mm\nImproper ignition timing\nInsufficient compression\nCab ",
+          "Wiring",
+          "Carburetor throttle link mechanism\nfunction inspection",
+          "Bi-starter valve return\ninspection",
+          "Correct, replace\nReplace\nReplace",
+          "Throttle shaft malfunctioning\nFaulty throttle valve.\nFaulty return spring",
+          "Correct\nCorrect, replace\nCorrect, replace\nReplace\nCorrect"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T23:51:08",
+      "stage": "render.plan",
+      "data": {
+        "count": 47,
+        "sample": [
+          {
+            "src": "Unsmooth lowering of rpm",
+            "dst": "Неравномерное снижение частоты вращения коленчатого вала"
+          },
+          {
+            "src": "Throttle grip play: 2~6mm",
+            "dst": "Свобода хода ручки дросселя: 2~6 мм"
+          },
+          {
+            "src": "Improper ignition timing",
+            "dst": "Неправильное время зажигания"
+          },
+          {
+            "src": "Insufficient compression",
+            "dst": "Недостаточное сжатие"
+          },
+          {
+            "src": "Cab insulator leak",
+            "dst": "Утечка изолятора кабины"
+          },
+          {
+            "src": "Wiring",
+            "dst": "Проводка"
+          },
+          {
+            "src": "Carburetor throttle link mechanism",
+            "dst": "Проверка функции механизма связи"
+          },
+          {
+            "src": "function inspection",
+            "dst": "дросселя карбюратора"
+          },
+          {
+            "src": "Bi-starter valve return",
+            "dst": "Проверка возврата клапана"
+          },
+          {
+            "src": "inspection",
+            "dst": "бистартера"
+          },
+          {
+            "src": "Correct, replace",
+            "dst": "Исправить, заменить"
+          },
+          {
+            "src": "Replace",
+            "dst": "Заменить"
+          },
+          {
+            "src": "Replace",
+            "dst": "Заменить"
+          },
+          {
+            "src": "Throttle shaft malfunctioning",
+            "dst": "Неисправность вала дросселя"
+          },
+          {
+            "src": "Faulty throttle valve.",
+            "dst": "Неисправный клапан дросселя."
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T23:51:09",
+      "stage": "save.done",
+      "data": {
+        "output": "output/645.jpg",
+        "ready": "/mnt/e/repos/translations/ready/645+20260628_235108+.jpg"
+      }
+    }
+  ]
+}

@@ -1,0 +1,297 @@
+{
+  "file": "files/645.jpg",
+  "file_name": "645.jpg",
+  "started_at": "2026-06-28T16:30:52",
+  "events": [
+    {
+      "timestamp": "2026-06-28T16:30:53",
+      "stage": "read.ok",
+      "data": {
+        "width": 1246,
+        "height": 1648,
+        "area": 2053408
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:30:53",
+      "stage": "runtime.gpu",
+      "data": {
+        "ocr_profile": "gpu_locked",
+        "use_preprocess_variants": false,
+        "paddle_available": true,
+        "paddle_version": "3.3.0",
+        "compiled_with_cuda": true,
+        "cuda_device_count": 1
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:31:02",
+      "stage": "ocr.variant",
+      "data": {
+        "variant": "raw_path",
+        "parsed_blocks": 70,
+        "score": 134.996,
+        "sample_texts": [
+          "HONDA",
+          "VT250F",
+          "TROUBLESHOOTING",
+          "Unsmooth lowering of rpm",
+          "Throttle grip play: 2~6mm",
+          "Wiring",
+          "Improper ignition timing",
+          "Insufficient compression"
+        ],
+        "input_type": "path"
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:31:02",
+      "stage": "ocr.selected",
+      "data": {
+        "variant": "raw_path",
+        "blocks": 70,
+        "score": 134.996
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:31:02",
+      "stage": "merge.done",
+      "data": {
+        "merged_blocks": 50,
+        "merged_preview": [
+          "HONDA VT250F",
+          "TROUBLESHOOTING",
+          "Unsmooth lowering of rpm",
+          "Throttle grip play: 2~6mm",
+          "Wiring Improper ignition timing",
+          "Insufficient compression Cab insulator leak",
+          "Carburetor throttle link mechanism",
+          "Bi-starter valve return",
+          "function inspection",
+          "inspection"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:31:02",
+      "stage": "split.large_blocks",
+      "data": {
+        "added": 2,
+        "preview": [
+          "Faulty setting of choke cable 2345 Faulty bi-starter cap Faulty junction box",
+          "Clogged slow circuit Faulty mounting of pilot screw"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:31:02",
+      "stage": "split.context_terms",
+      "data": {
+        "added": 4,
+        "preview": [
+          "Throttle grip play: 2~6mm",
+          "Throttle shaft malfunctioning Faulty throttle valve.",
+          "Correct Correct, replace",
+          "Clean Correct, replace"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:31:02",
+      "stage": "split.done",
+      "data": {
+        "threshold": 6160,
+        "context_count": 21,
+        "labels_count": 35,
+        "context_preview": [
+          "HONDA VT250F",
+          "TROUBLESHOOTING",
+          "Unsmooth lowering of rpm",
+          "Throttle grip play: 2~6mm",
+          "Wiring Improper ignition timing",
+          "Insufficient compression Cab insulator leak",
+          "Carburetor throttle link mechanism",
+          "Throttle shaft malfunctioning Faulty throttle valve."
+        ],
+        "labels_preview": [
+          "Bi-starter valve return",
+          "function inspection",
+          "inspection",
+          "OK",
+          "NG",
+          "NG",
+          "Correct, replace",
+          "Replace Replace",
+          "Faulty return spring",
+          "Correct, replace",
+          "Replace Correct",
+          "Synchronization inspection"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:31:02",
+      "stage": "split.context_trim",
+      "data": {
+        "original": 21,
+        "used": 8
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:31:02",
+      "stage": "llm.prepare",
+      "data": {
+        "labels_total": 35,
+        "to_translate": 6,
+        "context_len": 393,
+        "labels_preview": [
+          "Bi-starter valve return",
+          "function inspection",
+          "inspection",
+          "OK",
+          "NG",
+          "NG",
+          "Correct, replace",
+          "Replace Replace"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:36:14",
+      "stage": "llm.response",
+      "data": {
+        "parsed": true,
+        "parse_mode": "line",
+        "raw_preview": "<think>\nOkay, let's tackle this translation request. The user wants automotive terms translated into Russian. First, I need to make sure I understand each item correctly.\n\nStarting with item 1: \"(at float valve seat)\". The term \"float valve seat\" is a specific part in automotive systems, probably related to fuel systems. In Russian, \"float valve\" is \"клапан поплавка\", and \"seat\" here would be \"седло\". So the translation would be \"(на седле клапана поплавка)\".\n\nNext, item 2: \"Valve pressure leakage.\" \"Valve\" is \"клапан\", \"pressure leakage\" is \"утечка давления\". So combining them: \"Утечка давления клапана.\"\n\nItem 3: \"Throttle grip play: 2~6mm\". \"Throttle grip\" is \"зажим дросселя\", \"play\" here refers to clearance, so \"зазор\". The numbers remain the same, so \"Зазор зажима дросселя: 2~6 мм\".\n\nI"
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:36:14",
+      "stage": "llm.final",
+      "data": {
+        "translated_preview": [
+          "Bi-starter valve return",
+          "function inspection",
+          "inspection",
+          "OK",
+          "NG",
+          "NG",
+          "исправить, заменить",
+          "Replace Replace",
+          "Faulty return spring",
+          "исправить, заменить",
+          "Replace Correct",
+          "Synchronization inspection"
+        ],
+        "cache_size": 6
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:36:14",
+      "stage": "render.done",
+      "data": {
+        "placements_count": 9,
+        "placements": [
+          {
+            "src": "Correct, replace",
+            "dst": "исправить, заменить",
+            "rect": [
+              1003,
+              574,
+              1135,
+              596
+            ]
+          },
+          {
+            "src": "Correct, replace",
+            "dst": "исправить, заменить",
+            "rect": [
+              412,
+              642,
+              540,
+              660
+            ]
+          },
+          {
+            "src": "(at float valve seat)",
+            "dst": "на седле клапана поплавка",
+            "rect": [
+              140,
+              1268,
+              290,
+              1288
+            ]
+          },
+          {
+            "src": "Correct, replace",
+            "dst": "исправить, заменить",
+            "rect": [
+              1061,
+              1440,
+              1190,
+              1462
+            ]
+          },
+          {
+            "src": "Valve pressure leakage.",
+            "dst": "Утечка давления клапана",
+            "rect": [
+              703,
+              1449,
+              889,
+              1468
+            ]
+          },
+          {
+            "src": "Throttle grip play: 2~6mm",
+            "dst": "Зазор зажима дросселя: 2~6 мм",
+            "rect": [
+              662,
+              236,
+              889,
+              260
+            ]
+          },
+          {
+            "src": "Throttle shaft malfunctioning Faulty throttle valve.",
+            "dst": "Неисправность оси дросселя Неисправный дроссельный клапан",
+            "rect": [
+              732,
+              579,
+              976,
+              619
+            ]
+          },
+          {
+            "src": "Correct Correct, replace",
+            "dst": "Исправить Исправить, заменить",
+            "rect": [
+              411,
+              604,
+              540,
+              642
+            ]
+          },
+          {
+            "src": "Clean Correct, replace",
+            "dst": "Очистить Исправить, заменить",
+            "rect": [
+              431,
+              1181,
+              559,
+              1217
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T16:36:15",
+      "stage": "save.done",
+      "data": {
+        "output": "output/645.jpg",
+        "ready": "/mnt/e/repos/translations/ready/645+20260628_163615+.jpg"
+      }
+    }
+  ]
+}

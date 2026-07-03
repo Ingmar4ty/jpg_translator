@@ -1,0 +1,404 @@
+{
+  "file": "files/645.jpg",
+  "file_name": "645.jpg",
+  "started_at": "2026-06-28T01:43:34",
+  "events": [
+    {
+      "timestamp": "2026-06-28T01:43:36",
+      "stage": "read.ok",
+      "data": {
+        "width": 1246,
+        "height": 1648,
+        "area": 2053408
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:43:36",
+      "stage": "runtime.gpu",
+      "data": {
+        "ocr_profile": "gpu_locked",
+        "use_preprocess_variants": false,
+        "paddle_available": true,
+        "paddle_version": "3.3.0",
+        "compiled_with_cuda": true,
+        "cuda_device_count": 1
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:43:45",
+      "stage": "ocr.variant",
+      "data": {
+        "variant": "raw_path",
+        "parsed_blocks": 70,
+        "score": 134.996,
+        "sample_texts": [
+          "HONDA",
+          "VT250F",
+          "TROUBLESHOOTING",
+          "Unsmooth lowering of rpm",
+          "Throttle grip play: 2~6mm",
+          "Wiring",
+          "Improper ignition timing",
+          "Insufficient compression"
+        ],
+        "input_type": "path"
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:43:45",
+      "stage": "ocr.selected",
+      "data": {
+        "variant": "raw_path",
+        "blocks": 70,
+        "score": 134.996
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:43:45",
+      "stage": "merge.done",
+      "data": {
+        "merged_blocks": 50,
+        "merged_preview": [
+          "HONDA VT250F",
+          "TROUBLESHOOTING",
+          "Unsmooth lowering of rpm",
+          "Throttle grip play: 2~6mm",
+          "Wiring Improper ignition timing",
+          "Insufficient compression Cab insulator leak",
+          "Carburetor throttle link mechanism",
+          "Bi-starter valve return",
+          "function inspection",
+          "inspection"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:43:45",
+      "stage": "split.large_blocks",
+      "data": {
+        "added": 2,
+        "preview": [
+          "Faulty setting of choke cable 2345 Faulty bi-starter cap Faulty junction box",
+          "Clogged slow circuit Faulty mounting of pilot screw"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:43:45",
+      "stage": "split.done",
+      "data": {
+        "threshold": 6160,
+        "context_count": 21,
+        "labels_count": 31,
+        "context_preview": [
+          "HONDA VT250F",
+          "TROUBLESHOOTING",
+          "Unsmooth lowering of rpm",
+          "Throttle grip play: 2~6mm",
+          "Wiring Improper ignition timing",
+          "Insufficient compression Cab insulator leak",
+          "Carburetor throttle link mechanism",
+          "Throttle shaft malfunctioning Faulty throttle valve."
+        ],
+        "labels_preview": [
+          "Bi-starter valve return",
+          "function inspection",
+          "inspection",
+          "OK",
+          "NG",
+          "NG",
+          "Correct, replace",
+          "Replace Replace",
+          "Faulty return spring",
+          "Correct, replace",
+          "Replace Correct",
+          "Synchronization inspection"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:43:45",
+      "stage": "split.context_trim",
+      "data": {
+        "original": 21,
+        "used": 8
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:43:45",
+      "stage": "llm.prepare",
+      "data": {
+        "labels_total": 31,
+        "to_translate": 2,
+        "context_len": 393,
+        "labels_preview": [
+          "Bi-starter valve return",
+          "function inspection",
+          "inspection",
+          "OK",
+          "NG",
+          "NG",
+          "Correct, replace",
+          "Replace Replace"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:46:20",
+      "stage": "llm.response",
+      "data": {
+        "parsed": true,
+        "parse_mode": "line",
+        "raw_preview": "<think>\nOkay, let's tackle this translation request. The user wants automotive terms translated into Russian. The input has two items, each with a list of terms. The output needs to be in the format N|||translation, one line per item.\n\nFirst, I need to make sure I understand the terms correctly. For the first item: \"Faulty setting of choke cable 2345 Faulty bi-starter cap Faulty junction box\". The numbers might be part of the term or a reference. \"Choke cable\" is a part of a carburetor, so \"Faulty setting\" would be \"Неправильная регулировка\". \"Bi-starter cap\" – \"bi-starter\" might be a typo for \"bistarter\" or \"bi-starter\", which could be a type of starter component. \"Junction box\" is \"распределительная коробка\".\n\nSecond item: \"Clogged slow circuit Faulty mounting of pilot screw\". \"Clogged\" "
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:46:20",
+      "stage": "llm.final",
+      "data": {
+        "translated_preview": [
+          "Возврат бистартового клапана",
+          "проверка функции",
+          "Проверка",
+          "OK",
+          "NG",
+          "NG",
+          "исправить, заменить",
+          "Заменить Заменить",
+          "Faulty return пружина",
+          "исправить, заменить",
+          "Заменить Исправить",
+          "проверка синхронизации"
+        ],
+        "cache_size": 26
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:46:20",
+      "stage": "render.done",
+      "data": {
+        "placements_count": 21,
+        "placements": [
+          {
+            "src": "Bi-starter valve return",
+            "dst": "Возврат бистартового клапана",
+            "rect": [
+              227,
+              410,
+              401,
+              427
+            ]
+          },
+          {
+            "src": "function inspection",
+            "dst": "проверка функции",
+            "rect": [
+              788,
+              424,
+              945,
+              440
+            ]
+          },
+          {
+            "src": "inspection",
+            "dst": "Проверка",
+            "rect": [
+              226,
+              428,
+              309,
+              447
+            ]
+          },
+          {
+            "src": "Correct, replace",
+            "dst": "исправить, заменить",
+            "rect": [
+              1003,
+              574,
+              1135,
+              596
+            ]
+          },
+          {
+            "src": "Replace Replace",
+            "dst": "Заменить Заменить",
+            "rect": [
+              1006,
+              596,
+              1073,
+              633
+            ]
+          },
+          {
+            "src": "Faulty return spring",
+            "dst": "Faulty return пружина",
+            "rect": [
+              733,
+              617,
+              899,
+              639
+            ]
+          },
+          {
+            "src": "Correct, replace",
+            "dst": "исправить, заменить",
+            "rect": [
+              412,
+              642,
+              540,
+              660
+            ]
+          },
+          {
+            "src": "Replace Correct",
+            "dst": "Заменить Исправить",
+            "rect": [
+              412,
+              660,
+              479,
+              696
+            ]
+          },
+          {
+            "src": "Synchronization inspection",
+            "dst": "проверка синхронизации",
+            "rect": [
+              514,
+              789,
+              734,
+              809
+            ]
+          },
+          {
+            "src": "Adjust",
+            "dst": "Настроить",
+            "rect": [
+              307,
+              973,
+              365,
+              997
+            ]
+          },
+          {
+            "src": "Adjust pilot screw",
+            "dst": "Adjust pilot винт",
+            "rect": [
+              844,
+              1207,
+              993,
+              1228
+            ]
+          },
+          {
+            "src": "Clean",
+            "dst": "Очистить",
+            "rect": [
+              431,
+              1232,
+              481,
+              1253
+            ]
+          },
+          {
+            "src": "(at float valve seat)",
+            "dst": "(на седле клапана поплавка)",
+            "rect": [
+              140,
+              1268,
+              290,
+              1288
+            ]
+          },
+          {
+            "src": "Clean",
+            "dst": "Очистить",
+            "rect": [
+              430,
+              1269,
+              478,
+              1288
+            ]
+          },
+          {
+            "src": "Still not normal",
+            "dst": "все еще не в норме",
+            "rect": [
+              1050,
+              1280,
+              1179,
+              1301
+            ]
+          },
+          {
+            "src": "Change Change",
+            "dst": "Изменение",
+            "rect": [
+              1060,
+              1369,
+              1121,
+              1406
+            ]
+          },
+          {
+            "src": "Adjust Adjust",
+            "dst": "Настройка",
+            "rect": [
+              1060,
+              1405,
+              1117,
+              1444
+            ]
+          },
+          {
+            "src": "Correct, replace",
+            "dst": "исправить, заменить",
+            "rect": [
+              1061,
+              1440,
+              1190,
+              1462
+            ]
+          },
+          {
+            "src": "Valve pressure leakage.",
+            "dst": "Утечка давления клапана",
+            "rect": [
+              703,
+              1449,
+              889,
+              1468
+            ]
+          },
+          {
+            "src": "Faulty setting of choke cable 2345 Faulty bi-starter cap Faulty junction box",
+            "dst": "Неправильная регулировка троса дросселя 2345 Неправильная установка крышки бистартера Неправильная установка распределительной коробки",
+            "rect": [
+              84,
+              605,
+              346,
+              699
+            ]
+          },
+          {
+            "src": "Clogged slow circuit Faulty mounting of pilot screw",
+            "dst": "Засоренный медленный канал Неправильная установка регулировочного винта",
+            "rect": [
+              140,
+              1179,
+              387,
+              1219
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:46:20",
+      "stage": "save.done",
+      "data": {
+        "output": "output/645.jpg",
+        "ready": "/mnt/e/repos/translations/ready/645+20260628_014620+.jpg"
+      }
+    }
+  ]
+}

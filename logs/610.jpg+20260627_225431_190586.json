@@ -1,0 +1,194 @@
+{
+  "file": "files/610.jpg",
+  "file_name": "610.jpg",
+  "started_at": "2026-06-27T22:52:16",
+  "events": [
+    {
+      "timestamp": "2026-06-27T22:52:16",
+      "stage": "read.ok",
+      "data": {
+        "width": 1246,
+        "height": 1648,
+        "area": 2053408
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:52:16",
+      "stage": "runtime.gpu",
+      "data": {
+        "ocr_profile": "gpu_locked",
+        "use_preprocess_variants": false,
+        "paddle_available": true,
+        "paddle_version": "3.3.0",
+        "compiled_with_cuda": true,
+        "cuda_device_count": 1
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:52:18",
+      "stage": "ocr.variant",
+      "data": {
+        "variant": "raw_path",
+        "parsed_blocks": 18,
+        "score": 37.985,
+        "sample_texts": [
+          "HONDA",
+          "TECHNICAL FEATURES",
+          "VT250F",
+          "COOLING SYSTEM",
+          "durability.",
+          "with a thermostat to prevent overcooling. It is also provided with a motor-driven cooling fan for cases where air-cooling is not",
+          "possible traveling.",
+          "(2) MOTOR-DRIVEN"
+        ],
+        "input_type": "path"
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:52:18",
+      "stage": "ocr.selected",
+      "data": {
+        "variant": "raw_path",
+        "blocks": 18,
+        "score": 37.985
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:52:18",
+      "stage": "merge.done",
+      "data": {
+        "merged_blocks": 15,
+        "merged_preview": [
+          "HONDA VT250F",
+          "TECHNICAL FEATURES COOLING SYSTEM",
+          "durability.",
+          "with a thermostat to prevent overcooling. It is also provided with a motor-driven cooling fan for cases where air-cooling is not",
+          "possible traveling.",
+          "(2) MOTOR-DRIVEN COOLING FAN",
+          "(1) RADIATOR",
+          "(3)THERMOSTAT",
+          "(4) RESERVE TANK",
+          "HONDA"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:52:18",
+      "stage": "split.done",
+      "data": {
+        "threshold": 6160,
+        "context_count": 11,
+        "labels_count": 4,
+        "context_preview": [
+          "HONDA VT250F",
+          "TECHNICAL FEATURES COOLING SYSTEM",
+          "with a thermostat to prevent overcooling. It is also provided with a motor-driven cooling fan for cases where air-cooling is not",
+          "possible traveling.",
+          "(2) MOTOR-DRIVEN COOLING FAN",
+          "(3)THERMOSTAT",
+          "(4) RESERVE TANK",
+          "HONDA"
+        ],
+        "labels_preview": [
+          "durability.",
+          "(1) RADIATOR",
+          "(5) SIDÉ FRAME",
+          "(6) WATER PUMP"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:52:18",
+      "stage": "llm.prepare",
+      "data": {
+        "labels_total": 4,
+        "to_translate": 4,
+        "context_len": 374,
+        "labels_preview": [
+          "durability.",
+          "(1) RADIATOR",
+          "(5) SIDÉ FRAME",
+          "(6) WATER PUMP"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:54:30",
+      "stage": "llm.response",
+      "data": {
+        "parsed": false,
+        "raw_preview": "<think>\nOkay, let's tackle this translation request. The user wants the given labels translated into Russian, specifically using automotive terms. First, I need to make sure I understand the context. The original text is about the cooling system of a Honda VT250F motorcycle. The terms to translate are \"durability,\" \"RADIATOR,\" \"SIDÉ FRAME,\" and \"WATER PUMP.\"\n\nStarting with \"durability.\" In Russian automotive contexts, \"durability\" is often translated as \"долговечность.\" That seems straightforward.\n\nNext, \"(1) RADIATOR.\" The word \"radiator\" in automotive terms is \"радиатор.\" Since it's numbered (1), I'll keep that in the translation as \"(1) РАДИАТОР.\"\n\nThen, \"(5) SIDÉ FRAME.\" The term \"side frame\" here likely refers to the motorcycle's frame part. The correct translation for \"side frame\" in"
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:54:30",
+      "stage": "llm.final",
+      "data": {
+        "translated_preview": [
+          "durability.",
+          "(1) RADIATOR",
+          "(5) SIDÉ FRAME",
+          "(6) WATER PUMP"
+        ],
+        "cache_size": 2
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:54:30",
+      "stage": "render.done",
+      "data": {
+        "placements_count": 4,
+        "placements": [
+          {
+            "src": "durability.",
+            "dst": "durability.",
+            "rect": [
+              49,
+              166,
+              150,
+              190
+            ]
+          },
+          {
+            "src": "(1) RADIATOR",
+            "dst": "(1) RADIATOR",
+            "rect": [
+              143,
+              342,
+              300,
+              365
+            ]
+          },
+          {
+            "src": "(5) SIDÉ FRAME",
+            "dst": "(5) SIDÉ FRAME",
+            "rect": [
+              224,
+              1266,
+              400,
+              1290
+            ]
+          },
+          {
+            "src": "(6) WATER PUMP",
+            "dst": "(6) WATER PUMP",
+            "rect": [
+              715,
+              1323,
+              899,
+              1345
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-27T22:54:31",
+      "stage": "save.done",
+      "data": {
+        "output": "output/610.jpg",
+        "ready": "/mnt/e/repos/translations/ready/610+20260627_225430+.jpg"
+      }
+    }
+  ]
+}

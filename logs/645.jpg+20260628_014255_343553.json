@@ -1,0 +1,52 @@
+{
+  "file": "files/645.jpg",
+  "file_name": "645.jpg",
+  "started_at": "2026-06-28T01:42:49",
+  "events": [
+    {
+      "timestamp": "2026-06-28T01:42:49",
+      "stage": "read.ok",
+      "data": {
+        "width": 1246,
+        "height": 1648,
+        "area": 2053408
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:42:49",
+      "stage": "runtime.gpu",
+      "data": {
+        "ocr_profile": "gpu_locked",
+        "use_preprocess_variants": false,
+        "paddle_available": true,
+        "paddle_version": "3.3.0",
+        "compiled_with_cuda": true,
+        "cuda_device_count": 0
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:42:55",
+      "stage": "ocr.variant",
+      "data": {
+        "variant": "raw_path",
+        "parsed_blocks": 0,
+        "score": -9999.0,
+        "sample_texts": [],
+        "input_type": "path"
+      }
+    },
+    {
+      "timestamp": "2026-06-28T01:42:55",
+      "stage": "ocr.empty",
+      "data": {}
+    },
+    {
+      "timestamp": "2026-06-28T01:42:55",
+      "stage": "save.raw",
+      "data": {
+        "output": "output/645.jpg",
+        "ready": "/mnt/e/repos/translations/ready/645+20260628_014255+.jpg"
+      }
+    }
+  ]
+}

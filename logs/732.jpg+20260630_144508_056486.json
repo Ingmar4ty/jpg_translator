@@ -1,0 +1,134 @@
+{
+  "file": "files/732.jpg",
+  "file_name": "732.jpg",
+  "started_at": "2026-06-30T14:39:57",
+  "events": [
+    {
+      "timestamp": "2026-06-30T14:39:57",
+      "stage": "read.ok",
+      "data": {
+        "width": 1246,
+        "height": 1648
+      }
+    },
+    {
+      "timestamp": "2026-06-30T14:39:58",
+      "stage": "ocr.raw",
+      "data": {
+        "count": 17,
+        "sample": [
+          "HONDA",
+          "FAIRING",
+          "VT250-FII",
+          "Tighten the two windshield mounting bolts which",
+          "fix the fairing stay simultaneously.",
+          "(1) HEADLIGHT",
+          "(3) WINDSCREEN",
+          "Connect the cords and couplers of the position lamp",
+          "and the headlight.",
+          "C"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-30T14:39:58",
+      "stage": "filter.done",
+      "data": {
+        "translatable": 11,
+        "skipped": 5,
+        "texts": [
+          "FAIRING",
+          "Tighten the two windshield mounting bolts which",
+          "(1) HEADLIGHT (3) WINDSCREEN",
+          "fix the fairing stay simultaneously.",
+          "Connect the cords and couplers of the position lamp",
+          "and the headlight.",
+          "(4) SCREW",
+          "(2) POSITION LAMP",
+          "Fix the right and left side pockets using three self.",
+          "tapping screws.",
+          "(1) SIDE POCKET"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-30T14:39:58",
+      "stage": "paragraphs.done",
+      "data": {
+        "total": 11,
+        "multi_line": 0,
+        "sample": [
+          "FAIRING",
+          "Tighten the two windshield mounting bolts which",
+          "(1) HEADLIGHT (3) WINDSCREEN",
+          "fix the fairing stay simultaneously.",
+          "Connect the cords and couplers of the position lamp",
+          "and the headlight.",
+          "(4) SCREW",
+          "(2) POSITION LAMP"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-30T14:45:07",
+      "stage": "render.plan",
+      "data": {
+        "count": 11,
+        "sample": [
+          {
+            "src": "FAIRING",
+            "dst": "обтекатель"
+          },
+          {
+            "src": "Tighten the two windshield mounting bolts which",
+            "dst": "Затяните два болта крепления ветрового щитка, которые"
+          },
+          {
+            "src": "(1) HEADLIGHT (3) WINDSCREEN",
+            "dst": "1. (1) Фары (3) Щиток приборов"
+          },
+          {
+            "src": "fix the fairing stay simultaneously.",
+            "dst": "одновременно закрепите держатель обтекателя."
+          },
+          {
+            "src": "Connect the cords and couplers of the position lamp",
+            "dst": "Подключите провода и разъемы стоп-сигнала"
+          },
+          {
+            "src": "and the headlight.",
+            "dst": "и фару."
+          },
+          {
+            "src": "(4) SCREW",
+            "dst": "2. (4) Винт"
+          },
+          {
+            "src": "(2) POSITION LAMP",
+            "dst": "3. (2) Позиционная лампа"
+          },
+          {
+            "src": "Fix the right and left side pockets using three self.",
+            "dst": "4. Закрепите правый и левый боковые карманы с помощью трёх самонарезающих винтов."
+          },
+          {
+            "src": "tapping screws.",
+            "dst": "5. Самонарезающие винты."
+          },
+          {
+            "src": "(1) SIDE POCKET",
+            "dst": "6. (1) Боковой карман"
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-30T14:45:08",
+      "stage": "save.done",
+      "data": {
+        "output": "output/732.jpg",
+        "ready": "/mnt/e/repos/translations/ready/732+20260630_144507+.jpg"
+      }
+    }
+  ]
+}
